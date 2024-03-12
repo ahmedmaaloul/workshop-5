@@ -79,8 +79,8 @@ export async function node(
         proposals.get(k)!.push(x);
         const proposal = proposals.get(k)!;
         if (proposal.length >= N - F) {
-          const CN = proposal.filter((el) => el == 0).length;
-          const CY = proposal.filter((el) => el == 1).length;
+          const CN = proposal.filter((x) => x == 0).length;
+          const CY = proposal.filter((x) => x == 1).length;
           x = CN > N / 2 ? 0 : CY > N / 2 ? 1 : "?";
           for (let i = 0; i < N; i++) {
             fetch(`http://localhost:${BASE_NODE_PORT + i}/message`, {
