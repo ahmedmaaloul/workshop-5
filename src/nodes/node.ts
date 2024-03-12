@@ -73,7 +73,7 @@ export async function node(
   // node.post("/message", (req, res) => {});
   node.post("/message", async (req, res) => {
     let { k, x, type } = req.body;
-    if (!isFaulty && !currentState.killed) {
+    if (!currentState.killed && !isFaulty) {
       if (type == "2P") {
         if (!proposals.has(k)) proposals.set(k, []);
         proposals.get(k)!.push(x);
