@@ -72,67 +72,45 @@ export async function node(
   // this route allows the node to receive messages from other nodes
   // node.post("/message", (req, res) => {});
   node.post("/message", async (req, res) => {
-    let { k, x, type }: { k: number; x: Value; type: string; } = req.body;
+    let { k, x, type } = req.body;
     if (!isFaulty && !currentState.killed) {
       if (type == "2P") {
-        if (!proposals.has(k)) {proposals.set(k, []);}
+        if (!proposals.has(k)) proposals.set(k, []);
         proposals.get(k)!.push(x);
-        let proposal = proposals.get(k)!;
-
+        const proposal = proposals.get(k)!;
         if (proposal.length >= N - F) {
-          let count0 = proposal.filter((el) => el == 0).length;
-          let count1 = proposal.filter((el) => el == 1).length;
-          if (count0 > N / 2) {
-            x = 0;
-          } else if (count1 > N / 2) {
-            x = 1;
-          } else {
-            x = "?";
-          }
+          const count0 = proposal.filter((el) => el == 0).length;
+          const count1 = proposal.filter((el) => el == 1).length;
+          x = count0 > N / 2 ? 0 : count1 > N / 2 ? 1 : "?";
           for (let i = 0; i < N; i++) {
             fetch(`http://localhost:${BASE_NODE_PORT + i}/message`, {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ k: k, x: x, type: "2V" }),
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ k, x, type: "2V" }),
             });
           }
         }
       } else if (type == "2V") {
-        if (!votes.has(k)) {votes.set(k, []);}
+        if (!votes.has(k)) votes.set(k, []);
         votes.get(k)!.push(x);
-        let vote = votes.get(k)!;
+        const vote = votes.get(k)!;
         if (vote.length >= N - F) {
-          let count0 = vote.filter((el) => el == 0).length;
-          let count1 = vote.filter((el) => el == 1).length;
-          if (count0 >= F + 1) {
+          const CN = vote.filter((x) => x == 0).length;
+          const CY = vote.filter((x) => x == 1).length;
+          if (CN >= F + 1) {
             currentState.x = 0;
             currentState.decided = true;
-          } else if (count1 >= F + 1) {
+          } else if (CY >= F + 1) {
             currentState.x = 1;
             currentState.decided = true;
           } else {
-            if (count0 + count1 > 0 && count0 > count1) {
-              currentState.x = 0;
-            } else if (count0 + count1 > 0 && count0 < count1) {
-              currentState.x = 1;
-            } else {
-              currentState.x = Math.random() > 0.5 ? 0 : 1;
-            }
+            currentState.x = CN + CY > 0 && CN > CY ? 0 : CN + CY > 0 && CN < CY ? 1 : Math.random() > 0.5 ? 0 : 1;
             currentState.k = k + 1;
-
             for (let i = 0; i < N; i++) {
               fetch(`http://localhost:${BASE_NODE_PORT + i}/message`, {
                 method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  k: currentState.k,
-                  x: currentState.x,
-                  type: "2P",
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ k: currentState.k, x: currentState.x, type: "2P" }),
               });
             }
           }
@@ -141,6 +119,7 @@ export async function node(
     }
     res.status(200).send("success");
   });
+  
   // TODO implement this
   // this route is used to stop the consensus algorithm
   node.get("/stop", async (req, res) => {
